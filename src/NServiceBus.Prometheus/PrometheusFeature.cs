@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using NServiceBus.Features;
 using Prometheus;
@@ -8,8 +7,6 @@ namespace NServiceBus.Prometheus
 {
     class PrometheusFeature : Feature
     {
-        private MetricServer server;
-
         public PrometheusFeature()
         {
             EnableByDefault();
@@ -17,14 +14,18 @@ namespace NServiceBus.Prometheus
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            server = new MetricServer("localhost", 1234);
+            var prometheusSettings = context.Settings.Get<Settings>();
+            var serverSettings = prometheusSettings.ServerSettings;
 
             context.Pipeline.Register(new InspectionBehavior(context.Settings.LocalAddress()), "Behavior which inspects metrics for prometheus.");
 
             context.RegisterStartupTask(new NotificationsObversation(context.Settings.Get<Notifications>()));
             context.RegisterStartupTask(new UpDown(context.Settings.EndpointName(), context.Settings.LocalAddress()));
 
-            context.RegisterStartupTask(new MetricServerStartAndStop(server));
+            if (serverSettings.Use)
+            {
+                context.RegisterStartupTask(new MetricServerStartAndStop(new MetricServer(serverSettings.Host, serverSettings.Port)));
+            }
         }
 
         class MetricServerStartAndStop : FeatureStartupTask
