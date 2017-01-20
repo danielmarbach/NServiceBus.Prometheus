@@ -63,7 +63,7 @@
     <Compile Include="NotificationsObversation.cs" />
     <Compile Include="PrometheusConfigurationExtensions.cs" />
     <Compile Include="PrometheusFeature.cs" />
-    <Compile Include="InspectionBehavior.InspectionBehavior.cs" />
+    <Compile Include="InspectionBehavior.cs" />
     <Compile Include="PrometheusSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerSettings.cs" />

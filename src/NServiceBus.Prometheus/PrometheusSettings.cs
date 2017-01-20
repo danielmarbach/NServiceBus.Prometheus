@@ -12,7 +12,8 @@ namespace NServiceBus.Prometheus
         {
             if (!settings.TryGet(out this.prometheus))
             {
-                settings.Set<Settings>(new Settings());
+                prometheus = new Settings();
+                settings.Set<Settings>(prometheus);
             }
         }
 

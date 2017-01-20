@@ -12,8 +12,6 @@ namespace NServiceBus.Prometheus
         private string localAddress;
         private Summary processingTime;
 
-        const int ticksPerMicrosecond = 10;
-
         public InspectionBehavior(string localAddress)
         {
             this.localAddress = localAddress;
@@ -38,7 +36,7 @@ namespace NServiceBus.Prometheus
             {
                 stopWatch.Stop();
 
-                var elapsedTotalMicroSeconds = Math.Floor(stopWatch.Elapsed.Ticks % TimeSpan.TicksPerMillisecond / (double)ticksPerMicrosecond);
+                var elapsedTotalMicroSeconds = stopWatch.Elapsed.Ticks / ticksPerMicrosecond;
 
                 processingTime.Observe(elapsedTotalMicroSeconds);
                 processingTime.Labels(messageType, messageIntent, localAddress).Observe(elapsedTotalMicroSeconds);
