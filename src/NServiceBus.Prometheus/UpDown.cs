@@ -16,7 +16,7 @@ namespace NServiceBus.Prometheus
             this.endpointName = endpointName;
 
             endpointUpDown = Metrics.CreateGauge("nservicebus_endpoint_up", "Messages sent to the error queue",
-                new[] {"name", "local_address"});
+                new[] { "name", "local_address" });
         }
 
         protected override Task OnStart(IMessageSession session)

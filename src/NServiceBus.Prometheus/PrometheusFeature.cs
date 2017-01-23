@@ -17,10 +17,13 @@ namespace NServiceBus.Prometheus
             var prometheusSettings = context.Settings.Get<Settings>();
             var serverSettings = prometheusSettings.ServerSettings;
 
-            context.Pipeline.Register(new InspectionBehavior(context.Settings.LocalAddress()), "Behavior which inspects metrics for prometheus.");
+            var endpointName = context.Settings.EndpointName();
+            var localAddress = context.Settings.LocalAddress();
 
-            context.RegisterStartupTask(new NotificationsObversation(context.Settings.Get<Notifications>()));
-            context.RegisterStartupTask(new UpDown(context.Settings.EndpointName(), context.Settings.LocalAddress()));
+            context.Pipeline.Register(new InspectionBehavior(endpointName, localAddress), "Behavior which inspects metrics for prometheus.");
+
+            context.RegisterStartupTask(new NotificationsObversation(context.Settings.Get<Notifications>(), endpointName, localAddress));
+            context.RegisterStartupTask(new UpDown(endpointName, localAddress));
 
             if (serverSettings.Use)
             {

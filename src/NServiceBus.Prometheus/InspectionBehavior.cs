@@ -10,17 +10,21 @@ namespace NServiceBus.Prometheus
     {
         private Counter messagesProcessed;
         private string localAddress;
-        private Summary processingTime;
+        private Histogram processingTime;
+        private string endpointName;
+        private Gauge messagesInProgress;
 
         const double ticksPerMicrosecond = 10;
 
-        public InspectionBehavior(string localAddress)
+        public InspectionBehavior(string endpointName, string localAddress)
         {
+            this.endpointName = endpointName;
             this.localAddress = localAddress;
 
-            messagesProcessed = Metrics.CreateCounter("nservicebus_messages_processed_total", "Messages processed", new[] {"message_type", "message_intent", "queue"});
-            processingTime = Metrics.CreateSummary("nservicebus_message_processing_duration_microseconds", "Message processing time in microseconds",
-                new[] {"message_type", "message_intent", "queue"});
+            messagesProcessed = Metrics.CreateCounter("nservicebus_messages_processed_total", "Messages processed", "name", "local_address", "message_type", "message_intent", "queue");
+            processingTime = Metrics.CreateHistogram("nservicebus_message_processing_duration_microseconds", "Message processing time in microseconds", new[] { 0.5, 0.9, 0.99 }, "name", "local_address", "message_type", "message_intent", "queue");
+            messagesInProgress = Metrics.CreateGauge("nservicebus_messages_in_progress", "Messages in progress",
+                "name", "local_address");
         }
 
         public async Task Invoke(ITransportReceiveContext context, Func<ITransportReceiveContext, Task> next)
@@ -32,6 +36,8 @@ namespace NServiceBus.Prometheus
 
             try
             {
+                messagesInProgress.Labels(endpointName, localAddress).Inc();
+
                 await next(context).ConfigureAwait(false);
             }
             finally
@@ -40,11 +46,12 @@ namespace NServiceBus.Prometheus
 
                 var elapsedTotalMicroSeconds = stopWatch.Elapsed.Ticks / ticksPerMicrosecond;
 
-                processingTime.Observe(elapsedTotalMicroSeconds);
-                processingTime.Labels(messageType, messageIntent, localAddress).Observe(elapsedTotalMicroSeconds);
+                processingTime.Labels(endpointName, localAddress, messageType, messageIntent, localAddress).Observe(elapsedTotalMicroSeconds);
+
+                messagesInProgress.Labels(endpointName, localAddress).Dec();
             }
 
-            messagesProcessed.Labels(messageType, messageIntent, localAddress).Inc();
+            messagesProcessed.Labels(endpointName, localAddress, messageType, messageIntent, localAddress).Inc();
         }
     }
 }

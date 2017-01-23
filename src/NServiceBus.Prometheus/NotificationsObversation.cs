@@ -12,14 +12,18 @@ namespace NServiceBus.Prometheus
         private Counter messagesSentToErrorQueue;
         private Counter messagesFailedAnImmediateRetryAttempt;
         private Counter messagesSentToDelayedRetries;
+        private string localAddress;
+        private string endpointName;
 
-        public NotificationsObversation(Notifications notifications)
+        public NotificationsObversation(Notifications notifications, string endpointName, string localAddress)
         {
+            this.endpointName = endpointName;
+            this.localAddress = localAddress;
             this.notifications = notifications;
 
-            messagesSentToErrorQueue = Metrics.CreateCounter("nservicebus_messages_sent_to_error_queue_total", "Messages sent to the error queue", new[] { "message_type", "message_intent", "exception_type" });
-            messagesFailedAnImmediateRetryAttempt = Metrics.CreateCounter("nservicebus_messages_failed_immediate_retry_attempt_total", "Messages that failed immediate retry attempt", new[] { "message_type", "message_intent", "exception_type" });
-            messagesSentToDelayedRetries = Metrics.CreateCounter("nservicebus_messages_failed_delayed_retry_attempt_total", "Messages that failed delayed retry attempt", new[] { "message_type", "message_intent", "exception_type" });
+            messagesSentToErrorQueue = Metrics.CreateCounter("nservicebus_messages_sent_to_error_queue_total", "Messages sent to the error queue", new[] { "name", "local_address", "message_type", "message_intent", "exception_type" });
+            messagesFailedAnImmediateRetryAttempt = Metrics.CreateCounter("nservicebus_messages_failed_immediate_retry_attempt_total", "Messages that failed immediate retry attempt", new[] { "name", "local_address", "message_type", "message_intent", "exception_type" });
+            messagesSentToDelayedRetries = Metrics.CreateCounter("nservicebus_messages_failed_delayed_retry_attempt_total", "Messages that failed delayed retry attempt", new[] { "name", "local_address", "message_type", "message_intent", "exception_type" });
         }
         protected override Task OnStart(IMessageSession session)
         {
@@ -44,8 +48,7 @@ namespace NServiceBus.Prometheus
             var messageType = failedMessage.Headers[Headers.EnclosedMessageTypes];
             var exceptionType = failedMessage.Exception.GetType().FullName;
 
-            messagesSentToErrorQueue.Inc();
-            messagesSentToErrorQueue.Labels(messageType, messageIntent, exceptionType).Inc();
+            messagesSentToErrorQueue.Labels(endpointName, localAddress, messageType, messageIntent, exceptionType).Inc();
         }
 
         void ErrorsOnMessageHasFailedAnImmediateRetryAttempt(object sender, ImmediateRetryMessage immediateRetryMessage)
@@ -54,8 +57,7 @@ namespace NServiceBus.Prometheus
             var messageType = immediateRetryMessage.Headers[Headers.EnclosedMessageTypes];
             var exceptionType = immediateRetryMessage.Exception.GetType().FullName;
 
-            messagesFailedAnImmediateRetryAttempt.Inc();
-            messagesFailedAnImmediateRetryAttempt.Labels(messageType, messageIntent, exceptionType).Inc();
+            messagesFailedAnImmediateRetryAttempt.Labels(endpointName, localAddress, messageType, messageIntent, exceptionType).Inc();
         }
 
         void ErrorsOnMessageHasBeenSentToDelayedRetries(object sender, DelayedRetryMessage delayedRetryMessage)
@@ -64,8 +66,7 @@ namespace NServiceBus.Prometheus
             var messageType = delayedRetryMessage.Headers[Headers.EnclosedMessageTypes];
             var exceptionType = delayedRetryMessage.Exception.GetType().FullName;
 
-            messagesSentToDelayedRetries.Inc();
-            messagesSentToDelayedRetries.Labels(messageType, messageIntent, exceptionType).Inc();
+            messagesSentToDelayedRetries.Labels(endpointName, localAddress, messageType, messageIntent, exceptionType).Inc();
         }
     }
 }
