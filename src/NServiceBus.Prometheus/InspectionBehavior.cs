@@ -12,6 +12,8 @@ namespace NServiceBus.Prometheus
         private string localAddress;
         private Summary processingTime;
 
+        const double ticksPerMicrosecond = 10;
+
         public InspectionBehavior(string localAddress)
         {
             this.localAddress = localAddress;
